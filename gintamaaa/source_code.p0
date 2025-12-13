@@ -1,0 +1,9 @@
+>>> 
+    int x = 8
+    int y = 1
+    p: "Sum of x and y is: ", x + y
+    int prod = x * y * 2
+    p: prod
+    p: "AAAAAAAA\nAAAAAAAAAA\n"
+    int diff = prod - 10
+<<<
