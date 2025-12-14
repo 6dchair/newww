@@ -1,0 +1,10 @@
+p: "hiiiii "
+    p: "WTF! AAAAAAAAAa"
+    p: "kurosooooooo!!!!!~~~~\m"
+    int x = 7;
+    int y = 2
+    p: x + y
+    p: x & y
+    p: "everglow"
+
+int c = -9 
