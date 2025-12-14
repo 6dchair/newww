@@ -232,10 +232,6 @@ static int GenerateExpression(Node *node, FILE *out, int target_reg) {
         }
             
         case 3: { // NODE_BINOP - binary operation
-            if(node->binop.op == '=') {
-                return GenerateExpression(node->binop.left, out, target_reg);
-            }
-            
             // for binary ops w/ target_reg (can be optimized)
             if(target_reg) {
                 // evaluate left into temp
@@ -354,7 +350,6 @@ static void GeneratePrint(Node *node, FILE *out) {
     
     Node *current = node->print_stmt.parts;
     
-    // first print all strings
     while(current) {
         Node *content = current;
         if(current->node_type == 7) {
@@ -364,25 +359,13 @@ static void GeneratePrint(Node *node, FILE *out) {
         if(content && content->node_type == 1) {  // string
             char *label = GetStringLabel(content->str_val);
             if(label) {
+                // this generates "daddiu r4, r0, strX" where strX is the lable
+                // the label name is used directly as the imm operand
                 fprintf(out, "daddiu r4, r0, %s\n", label);
                 fprintf(out, "syscall 4\n");
             }
-        }
-        current = current->list.next;
-    }
-    
-    // then print all expressions - EVALUATE DIRECTLY INTO r4
-    current = node->print_stmt.parts;
-    while(current) {
-        Node *content = current;
-        if(current->node_type == 7) {
-            content = current->list.items;
-        }
-        
-        if(content && content->node_type != 1) {  // not a string
-            // evaluate expression directly into r4
+        } else if(content) {  // expression
             GenerateExpression(content, out, 4);  // target reg = 4
-            
             fprintf(out, "syscall 1\n");
         }
         current = current->list.next;
@@ -436,6 +419,17 @@ void GenerateAssemblyProgram(Node *program, FILE *out) {
     // collect all symbols and strings
     CollectSymbolsFromAST(program);
     
+    // FIX 15: register string labels (str0, str1, ...) in the symbol table
+    // so that GetOffsetOfTheSymbol() can fnd them laterr in the machine code generator
+    // previously this was missing -> machine code generator reported "str0 is not a known label"
+    // now AddLabel() adds each str label w/ reg = -1 & correct offset
+    // size = strlen(value) + 1 to account for null terminator
+    for(int i = 0; i < string_count; i++)
+        AddLabel(string_table[i].label, strlen(string_table[i].value) + 1);
+    
+    // debug: orint symbol table
+    PrintAllSymbols(out);
+    
     // generate .data section
     fprintf(out, ".data\n");
     PrintDataSection(out);  // vars
@@ -460,7 +454,7 @@ void GenerateAssemblyProgram(Node *program, FILE *out) {
         current = current->list.next;
     }
     
-    // exit program
+    // exit program; newline then exit
     fprintf(out, "syscall 10\n");
     
     // cleanup
