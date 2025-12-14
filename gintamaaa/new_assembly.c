@@ -428,7 +428,7 @@ void GenerateAssemblyProgram(Node *program, FILE *out) {
         AddLabel(string_table[i].label, strlen(string_table[i].value) + 1);
     
     // debug: orint symbol table
-    PrintAllSymbols(out);
+    // PrintAllSymbols(out);
     
     // generate .data section
     fprintf(out, ".data\n");
